@@ -15,8 +15,8 @@ st.write("*A snow-accelerated real-time delay estimator.*")
 
 @st.cache_resource(show_spinner="Connecting to Hopsworks")
 def get_project():
-    hopsworks_api_key = os.environ.get("HOPSWORKS_API_KEY", open(".hw_key").read().strip())
-    return hopsworks.login(api_key_value=hopsworks_api_key)
+    hopsworks_api_key = os.environ["HOPSWORKS_API_KEY"]
+    return hopsworks.login(api_key_value=hopsworks_api_key, project="TSEDMID2223")
 
 
 project = get_project()

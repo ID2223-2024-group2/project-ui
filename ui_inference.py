@@ -3,8 +3,8 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 import os
 import requests
-import training_helpers
 import time
+import ui_helpers
 
 MODEL_VERSION = 3
 FV_VERSION = 7
@@ -65,9 +65,9 @@ def download_last_entry(_project, transport_string):
 
 
 def run_inference(infer, feature_scaler, label_scaler, last_entry):
-    stripped = training_helpers.strip_dates(last_entry)
-    useful = stripped[training_helpers.TO_USE]
-    one_hotted = training_helpers.one_hot(useful)
+    stripped = ui_helpers.strip_dates(last_entry)
+    useful = stripped[ui_helpers.TO_USE]
+    one_hotted = ui_helpers.one_hot(useful)
     feature = tf.dtypes.cast(feature_scaler.transform(one_hotted), tf.float32)
     predictions = infer(feature)["output_0"]
     values = label_scaler.inverse_transform(predictions)
@@ -77,7 +77,7 @@ def run_inference(infer, feature_scaler, label_scaler, last_entry):
 
 
 def github_headers():
-    github_token = os.environ.get("GITHUB_TOKEN", open(".github_token").read().strip())
+    github_token = os.environ["GITHUB_TOKEN"]
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github+json"
