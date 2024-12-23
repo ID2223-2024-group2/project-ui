@@ -13,8 +13,9 @@ def hindcast(_project, transport_string, datapoints):
     yesterday_midnight = datetime.datetime(now.year, now.month, now.day) - datetime.timedelta(days=1)
     df = download_all_data(_project)
     df = df.tail(datapoints)
-    df = df[df["route_type"] == ui_helpers.transport_int((transport_string))]
-    # TODO: Limit to predictions before yesterday midnight
+    df = df[df["route_type"] == ui_helpers.transport_int(transport_string)]
+    df["arrival_time_bin"] = df["arrival_time_bin"].dt.tz_convert(None)
+    df = df[df["arrival_time_bin"] <= yesterday_midnight]
     return df
 
 
