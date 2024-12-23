@@ -1,12 +1,10 @@
 import streamlit as st
 import ui_helpers
 import datetime
-import pandas as pd
-import numpy as np
 import hopsworks
 import os
-import time
 
+import ui_hindcast
 import ui_inference
 
 st.title("🐐 Gävleborg Train Delay Forecast")
@@ -46,19 +44,44 @@ with tab_data:
     st.text("Real-time data triggers the batch ingestion GitHub Actions pipeline manually. "
             "While the pipeline is running, it cannot manually be re-triggered. "
             "Pipeline runs usually take 5 minutes.")
-    github_headers = ui_inference.github_headers()
-    ui_inference.github_workflow_wait(github_headers)
-    if st.button("Download and use real-time data", type="primary"):
-        ui_inference.github_workflow_trigger(github_headers)
-        st.rerun()
+    if st.checkbox("Enabled real-time data? This may freeze the UI during pipeline runs."):
+        github_headers = ui_inference.github_headers()
+        ui_inference.github_workflow_wait(github_headers)
+        if st.button("Download and use real-time data", type="primary"):
+            ui_inference.github_workflow_trigger(github_headers)
+            st.rerun()
 
 
 with tab_evaluate:
     col1, col2 = st.columns(2)
     with col1:
         what_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="bar")
-    with col2:
-        what_data = st.pills("Chart elements to show", ["Actual", "Predicted"], selection_mode="multi")
-    st.text("")
-    if len(what_data) > 0:
-        st.text("hi")
+    # with col2:
+    #     possibilities_labels = ["Arrival Delay", "On Time %"]
+    #     possibilities_cols = ["predicted_mean_on_time_percent", "predicted_mean_arrival_delay_seconds"]
+    #     what_data = st.multiselect("Series",
+    #                                options=possibilities_cols,
+    #                                default=possibilities_cols,
+    #                                format_func=lambda label: possibilities_labels[possibilities_cols.index(label)])
+    how_far = st.slider("Number of datapoints", min_value=1, max_value=300, value=50)
+    hindcast_delay = ui_hindcast.hindcast(project, what_mode, how_far)
+    st.markdown("### Average Arrival Delay")
+    renamed_delay = {
+        "predicted_mean_arrival_delay_seconds": "Predicted",
+        "mean_arrival_delay_seconds": "Actual"
+    }
+    st.line_chart(hindcast_delay.rename(columns=renamed_delay),
+                  x="arrival_time_bin",
+                  y=["Predicted", "Actual"],
+                  x_label="Time",
+                  y_label=["Delay (s)"])
+    st.markdown("### On Time Percentage")
+    renamed_on_time = {
+        "predicted_mean_on_time_percent": "Predicted",
+        "mean_on_time_percent": "Actual"
+    }
+    st.line_chart(hindcast_delay.rename(columns=renamed_on_time),
+                  x="arrival_time_bin",
+                  y=["Predicted", "Actual"],
+                  x_label="Time",
+                  y_label="Percentage (%)")

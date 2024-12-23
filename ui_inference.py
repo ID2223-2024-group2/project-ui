@@ -52,14 +52,8 @@ def download_all_data(_project):
 
 @st.cache_data(ttl=TTL, show_spinner="Preparing data")
 def download_last_entry(_project, transport_string):
-    if transport_string == "Train":
-        transport_int = 100
-    elif transport_string == "Bus":
-        transport_int = 700
-    else:
-        raise RuntimeError("unknown transportation type " + transport_string)
     df = download_all_data(_project)
-    correct_transport = df[df["route_type"] == transport_int]
+    correct_transport = df[df["route_type"] == ui_helpers.transport_int(transport_string)]
     last = correct_transport.head(1)
     return last
 

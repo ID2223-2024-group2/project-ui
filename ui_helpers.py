@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-import os
 
 TO_USE = ["route_type", "mean_arrival_delay_seconds_lag_5stops", "stop_count", "temperature_2m", "snowfall", "snow_depth", "wind_gusts_10m", "hour"]
 _route_types = [100, 101, 102, 103, 105, 106, 401, 700, 714, 900, 1000, 1501]
@@ -18,6 +16,16 @@ def one_hot(df):
                 encoded[f"route_type_{rt}"] = 0
         df = pd.concat([df, encoded], axis=1).drop(columns=["route_type"])
     return df
+
+
+def transport_int(transport_string):
+    if transport_string == "Train":
+        return 100
+    elif transport_string == "Bus":
+        return 700
+    else:
+        raise RuntimeError("unknown transportation type " + transport_string)
+
 
 def get_interval(date, full=False):
     return date.strftime("**%H:%M**" + (" *(%Y-%m-%d)*" if full else ""))
