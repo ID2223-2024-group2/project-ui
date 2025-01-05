@@ -63,7 +63,7 @@ with tab_evaluate:
     #                                options=possibilities_cols,
     #                                default=possibilities_cols,
     #                                format_func=lambda label: possibilities_labels[possibilities_cols.index(label)])
-    how_far = st.slider("Number of datapoints", min_value=1, max_value=300, value=50)
+    how_far = st.slider("Number of datapoints", min_value=1, max_value=300, value=100)
     hindcast_delay = ui_hindcast.hindcast(project, what_mode, how_far)
     st.markdown("### Average Arrival Delay")
     renamed_delay = {
