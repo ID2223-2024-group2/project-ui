@@ -32,20 +32,25 @@ with tab_predict:
     col1, _ = st.columns(2)
     with col1:
         transport_string = transport_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="foo")
-    delay, on_time, date = ui_inference.inference(project, transport_mode)
+    prediction_df = ui_inference.inference(project, transport_mode)
+    # with st.expander("Show Delay Forecast Table"):
+    #    st.dataframe(weather_df)
+    delay, on_time, date = ui_helpers.get_current_prediction_values(prediction_df)
+    delay_trend, on_time_trend = ui_helpers.get_prediction_trends(prediction_df)
+
     st.text("")
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Estimated Avg. Arrival Delay", ui_helpers.seconds_to_minute_string(delay))
+        st.metric("Estimated Avg. Arrival Delay", ui_helpers.seconds_to_minute_string(delay),
+                  delta=ui_helpers.seconds_to_minute_string(delay_trend), delta_color="inverse")
     with col2:
-        st.metric("Estimated On Time Percentage", f"{on_time:.1f}%")
-    st.write(f"*Metrics are for the next hour starting at {date.hour}.*")
+        st.metric("Estimated On Time Percentage", f"{on_time:.1f}%", delta=f"{on_time_trend:.1f}%")
+    st.write(f"*All metrics are per-stop*")
     st.write("*Transport is on-time if it arrives within 3 minutes before or 5 minutes after its scheduled time.*")
 
     st.write("#### Weather Forecast")
     st.write("Sourced from [Open-Meteo](https://open-meteo.com)")
     weather_df, weather_icons = ui_weather.get_current_weather_df()
-    print(weather_icons)
 
     st.markdown(
         f"""
@@ -63,8 +68,8 @@ with tab_predict:
         unsafe_allow_html=True
     )
 
-    with st.expander("Show Weather Forecast Table"):
-        st.dataframe(weather_df)
+    # with st.expander("Show Weather Forecast Table"):
+    #    st.dataframe(weather_df)
 
     st.divider()
     st.write("Delay forecasts are generated every quarter-hour, but may take a few minutes to appear. "

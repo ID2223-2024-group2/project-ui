@@ -35,3 +35,17 @@ def seconds_to_minute_string(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins}m {secs}s"
+
+
+def get_current_prediction_values(df: pd.DataFrame) -> (float, float, str):
+    current_prediction = df.iloc[-1]
+    delay = current_prediction["predicted_delay"]
+    on_time = current_prediction["predicted_on_time"]
+    date = current_prediction["arrival_time_bin"]
+    return delay, on_time, date
+
+
+def get_prediction_trends(df: pd.DataFrame) -> (float, float):
+    delay_trend = df["predicted_delay"].diff().mean()
+    on_time_trend = df["predicted_on_time"].diff().mean()
+    return delay_trend, on_time_trend

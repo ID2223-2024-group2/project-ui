@@ -9,6 +9,7 @@ import ui_helpers
 MODEL_VERSION = 3
 FV_VERSION = 7
 TTL = 5 * 60
+TREND_WINDOW = 2
 
 GIT_OWNER = "ID2223-2024-group2"
 GIT_REPO = "project"
@@ -20,9 +21,14 @@ GIT_BASE_URL = f"https://api.github.com/repos/{GIT_OWNER}/{GIT_REPO}"
 @st.cache_data(ttl=TTL, show_spinner="Running inference")
 def inference(_project, transport_string):
     infer, feature_scaler, label_scaler = download_model(_project)
-    last_entry = download_last_entry(_project, transport_string)
-    delay, on_time = run_inference(infer, feature_scaler, label_scaler, last_entry)
-    return delay, on_time, last_entry["arrival_time_bin"].tolist()[0]
+    last_entries = download_last_entries(_project, transport_string, last_entries=TREND_WINDOW)
+    delay, on_time = run_inference(infer, feature_scaler, label_scaler, last_entries)
+
+    prediction_df = last_entries.copy()
+    prediction_df.sort_values(by=["arrival_time_bin"], inplace=True, ascending=True)
+    prediction_df["predicted_delay"] = delay
+    prediction_df["predicted_on_time"] = on_time
+    return prediction_df
 
 
 @st.cache_resource(show_spinner="Downloading AI model")
@@ -51,23 +57,23 @@ def download_all_data(_project):
 
 
 @st.cache_data(ttl=TTL, show_spinner="Preparing data")
-def download_last_entry(_project, transport_string):
+def download_last_entries(_project, transport_string, last_entries=1):
     df = download_all_data(_project)
     correct_transport = df[df["route_type"] == ui_helpers.transport_int(transport_string)]
-    last = correct_transport.head(1)
+    last = correct_transport.head(last_entries)
     return last
 
 
-def run_inference(infer, feature_scaler, label_scaler, last_entry):
-    stripped = ui_helpers.strip_dates(last_entry)
+def run_inference(infer, feature_scaler, label_scaler, last_entries):
+    stripped = ui_helpers.strip_dates(last_entries)
     useful = stripped[ui_helpers.TO_USE]
     one_hotted = ui_helpers.one_hot(useful)
     feature = tf.dtypes.cast(feature_scaler.transform(one_hotted), tf.float32)
     predictions = infer(feature)["output_0"]
     values = label_scaler.inverse_transform(predictions)
-    delay = tf.squeeze(values[0, 0]).numpy()
-    on_time = tf.squeeze(values[0, 1]).numpy()
-    return delay, on_time
+    delays = values[:, 0]
+    on_times = values[:, 1]
+    return delays, on_times
 
 
 def github_headers():
@@ -100,4 +106,4 @@ def github_workflow_wait(headers):
         while github_workflow_running_now(headers):
             time.sleep(5)
         download_all_data.clear()
-        download_last_entry.clear()
+        download_last_entries.clear()
