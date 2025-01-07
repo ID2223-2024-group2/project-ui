@@ -6,6 +6,8 @@ import os
 
 import ui_hindcast
 import ui_inference
+import ui_weather
+from shared.constants import get_relative_static_url
 
 st.title("🐐 Gävleborg Train Delay Forecast")
 st.write("*A snow-accelerated real-time delay estimator.*")
@@ -32,9 +34,35 @@ with tab_predict:
         st.metric("Estimated Avg. Arrival Delay", ui_helpers.seconds_to_minute_string(delay))
     with col2:
         st.metric("Estimated On Time Percentage", f"{on_time:.1f}%")
+    st.write(f"*Metrics are for the next hour starting at {date.hour}.*")
     st.write("*Transport is on-time if it arrives within 3 minutes before or 5 minutes after its scheduled time.*")
+
+    st.write("#### Weather Forecast")
+    st.write("Sourced from [Open-Meteo](https://open-meteo.com)")
+    weather_df, weather_icons = ui_weather.get_current_weather_df()
+    print(weather_icons)
+
+    st.markdown(
+        f"""
+        <div style="background-color: #f0f0f010; padding: 10px; border-radius: 5px; margin-bottom: 10px">
+            <div style="display: flex; align-items: center;">
+                <div style="flex: 1;">
+                    <img src="{get_relative_static_url(weather_icons[0].icon)}" width="50">
+                </div>
+                <div style="flex: 5;">
+                    {weather_icons[0].description}
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("Show Weather Forecast Table"):
+        st.dataframe(weather_df)
+
     st.divider()
-    st.write("Forecasts are generated every quarter-hour, but may take a few minutes to appear. "
+    st.write("Delay forecasts are generated every quarter-hour, but may take a few minutes to appear. "
              "Predictions may not reflect reality. All data is given as-is without guarantees.")
 
 with tab_data:
