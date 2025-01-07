@@ -9,6 +9,11 @@ import ui_inference
 import ui_weather
 from shared.constants import get_relative_static_url
 
+st.set_page_config(
+    page_title="Gävleborg Train Delay Forecast",
+    page_icon="🐐"
+)
+
 st.title("🐐 Gävleborg Train Delay Forecast")
 st.write("*A snow-accelerated real-time delay estimator.*")
 
