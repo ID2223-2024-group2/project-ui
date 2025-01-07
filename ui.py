@@ -136,6 +136,10 @@ with tab_evaluate:
     col1, col2 = st.columns(2)
     with col1:
         what_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="what_mode")
+    with col2:
+        st.write("")
+        st.write("")
+        interpolate_values = st.checkbox("Interpolate missing values*", value=True)
     # with col2:
     #     possibilities_labels = ["Arrival Delay", "On Time %"]
     #     possibilities_cols = ["predicted_mean_on_time_percent", "predicted_mean_arrival_delay_seconds"]
@@ -143,8 +147,12 @@ with tab_evaluate:
     #                                options=possibilities_cols,
     #                                default=possibilities_cols,
     #                                format_func=lambda label: possibilities_labels[possibilities_cols.index(label)])
-    how_far = st.slider("Number of datapoints", min_value=1, max_value=300, value=100)
-    hindcast_delay = ui_hindcast.hindcast(project, what_mode, how_far)
+    how_far = st.slider("Number of datapoints", min_value=80, max_value=800, value=100)
+    hindcast_delay, reindexed_df = ui_hindcast.hindcast(project, what_mode, how_far)
+
+    if not interpolate_values:
+        hindcast_delay = reindexed_df
+
     st.markdown("### Average Arrival Delay")
     renamed_delay = {
         "predicted_mean_arrival_delay_seconds": "Predicted",
@@ -165,3 +173,5 @@ with tab_evaluate:
                   y=["Predicted", "Actual"],
                   x_label="Time",
                   y_label="Percentage (%)")
+
+    st.write("\* Data can be missing during times with no transit service (e.g. nights, trains outside of rush-hours). ")
