@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 import ui_helpers
 import datetime
@@ -10,13 +11,14 @@ import ui_weather
 from shared.constants import get_relative_static_url
 
 st.set_page_config(
-    page_title="Gävleborg Train Delay Forecast",
+    page_title="Gävleborg Transit Delay Forecast",
     page_icon="🐐"
 )
 
-st.title("🐐 Gävleborg Train Delay Forecast")
+st.title("🐐 Gävleborg Transit Delay Forecast")
 st.write("*A snow-accelerated real-time delay estimator.*")
 
+SHOW_TABLES = False
 
 @st.cache_resource(show_spinner="Connecting to Hopsworks")
 def get_project():
@@ -27,14 +29,38 @@ def get_project():
 project = get_project()
 tab_predict, tab_data, tab_evaluate = st.tabs(["Forecast", "Data", "Historical Accuracy"])
 
+# Fetch the current weather description before the selectbox
+weather_df, weather_icons = ui_weather.get_current_weather_df()
+current_weather_description = weather_icons[0].description
+
+current_weather_predictions = pd.DataFrame()
 
 with tab_predict:
-    col1, _ = st.columns(2)
+    col1, col2 = st.columns(2)
+    transport_options = {"🚂 Train": "Train", "🚌 Bus": "Bus"}
+    weather_options = {
+        f"{weather_icons[0].to_emoji()} Actual Current Weather": "Current",
+        "☀️ Clear*": "Clear",
+        "💨 Windy*": "Windy",
+        "🌨️ Snow*": "Snow"
+    }
+
     with col1:
-        transport_string = transport_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="foo")
-    prediction_df = ui_inference.inference(project, transport_mode)
-    # with st.expander("Show Delay Forecast Table"):
-    #    st.dataframe(weather_df)
+        transport_string = st.selectbox("Mode of transportation", options=list(transport_options.keys()), key="transport_string")
+        transport_mode = transport_options[transport_string]
+
+    with col2:
+        weather_condition = st.selectbox("Weather condition", options=list(weather_options.keys()), key="weather_condition")
+        weather_condition = weather_options[weather_condition]
+
+    prediction_df = ui_inference.inference(project, transport_mode, weather_condition)
+    if weather_condition == "Current":
+        current_weather_predictions = prediction_df.copy()
+
+    if SHOW_TABLES:
+        with st.expander("Show Delay Forecast Table"):
+            st.dataframe(prediction_df)
+
     delay, on_time, date = ui_helpers.get_current_prediction_values(prediction_df)
     delay_trend, on_time_trend = ui_helpers.get_prediction_trends(prediction_df)
 
@@ -44,34 +70,50 @@ with tab_predict:
         st.metric("Estimated Avg. Arrival Delay", ui_helpers.seconds_to_minute_string(delay),
                   delta=ui_helpers.seconds_to_minute_string(delay_trend), delta_color="inverse")
     with col2:
-        st.metric("Estimated On Time Percentage", f"{on_time:.1f}%", delta=f"{on_time_trend:.1f}%")
-    st.write(f"*All metrics are per-stop*")
-    st.write("*Transport is on-time if it arrives within 3 minutes before or 5 minutes after its scheduled time.*")
+        st.metric("Estimated On Time Percentage\*\*", f"{on_time:.1f}%", delta=f"{on_time_trend:.1f}%")
+    st.write("*All metrics are per-stop; Trends are calculated based on previous hour(s)*")
 
     st.write("#### Weather Forecast")
     st.write("Sourced from [Open-Meteo](https://open-meteo.com)")
-    weather_df, weather_icons = ui_weather.get_current_weather_df()
 
     st.markdown(
         f"""
         <div style="background-color: #f0f0f010; padding: 10px; border-radius: 5px; margin-bottom: 10px">
-            <div style="display: flex; align-items: center;">
-                <div style="flex: 1;">
-                    <img src="{get_relative_static_url(weather_icons[0].icon)}" width="50">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1; text-align: center;">
+                    <strong>Current ({ui_helpers.get_hour_range(weather_df.iloc[0]["date"])})</strong>
                 </div>
-                <div style="flex: 5;">
-                    {weather_icons[0].description}
+                <div style="flex: 1; text-align: center;">
+                    <strong>Upcoming ({ui_helpers.get_hour_range(weather_df.iloc[1]["date"])})</strong>
                 </div>
             </div>
-        </div>
+            <div style="display: flex; align-items: center;">
+                <div style="flex: 2; text-align: center;">
+                    <img src="{get_relative_static_url(weather_icons[0].icon)}" width="72">
+                </div>
+                <div style="flex: 4; font-size: 1.1em; text-align: center;">
+                    {weather_icons[0].description}
+                </div>
+                <div style="flex: 0.1; height: 60px; border-left: 1px solid #ccc; margin: 0 10px;"></div>
+                <div style="flex: 2; text-align: center;">
+                    <img src="{get_relative_static_url(weather_icons[1].icon)}" width="72">
+                </div>
+                <div style="flex: 4; font-size: 1.1em; text-align: center;">
+                    {weather_icons[1].description}
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
         """,
         unsafe_allow_html=True
     )
 
-    # with st.expander("Show Weather Forecast Table"):
-    #    st.dataframe(weather_df)
+    if SHOW_TABLES:
+        with st.expander("Show Weather Forecast Table"):
+           st.dataframe(weather_df)
 
     st.divider()
+    st.write("*\* If selected, weather conditions for the current time interval are replaced with simulated values*")
+    st.write("*\*\* Transport is on-time if it arrives within 3 minutes before or 5 minutes after its scheduled time.*")
     st.write("Delay forecasts are generated every quarter-hour, but may take a few minutes to appear. "
              "Predictions may not reflect reality. All data is given as-is without guarantees.")
 
@@ -93,7 +135,7 @@ with tab_data:
 with tab_evaluate:
     col1, col2 = st.columns(2)
     with col1:
-        what_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="bar")
+        what_mode = st.selectbox("Mode of transportation", options=["Train", "Bus"], key="what_mode")
     # with col2:
     #     possibilities_labels = ["Arrival Delay", "On Time %"]
     #     possibilities_cols = ["predicted_mean_on_time_percent", "predicted_mean_arrival_delay_seconds"]

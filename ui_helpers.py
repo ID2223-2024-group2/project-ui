@@ -31,6 +31,10 @@ def get_interval(date, full=False):
     return date.strftime("**%H:%M**" + (" *(%Y-%m-%d)*" if full else ""))
 
 
+def get_hour_range(date):
+    return date.strftime("%H:00 - %H:59")
+
+
 def seconds_to_minute_string(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)

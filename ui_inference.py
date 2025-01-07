@@ -1,10 +1,13 @@
+import pandas as pd
 import streamlit as st
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 import os
 import requests
 import time
+
 import ui_helpers
+import weather.simulated as ws
 
 MODEL_VERSION = 3
 FV_VERSION = 7
@@ -19,9 +22,12 @@ GIT_BASE_URL = f"https://api.github.com/repos/{GIT_OWNER}/{GIT_REPO}"
 
 
 @st.cache_data(ttl=TTL, show_spinner="Running inference")
-def inference(_project, transport_string):
+def inference(_project, transport_string: str, weather_condition: str) -> pd.DataFrame:
     infer, feature_scaler, label_scaler = download_model(_project)
     last_entries = download_last_entries(_project, transport_string, last_entries=TREND_WINDOW)
+    if weather_condition != "Current":
+        last_entries = ws.simulate_weather(last_entries, weather_condition)
+
     delay, on_time = run_inference(infer, feature_scaler, label_scaler, last_entries)
 
     prediction_df = last_entries.copy()

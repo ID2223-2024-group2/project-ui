@@ -10,6 +10,9 @@ class Wmo:
     def from_code(cls, code):
         return WMO_CODES.get(code, WMO_CODES[0])
 
+    def to_emoji(self):
+        return EMOJI_MAPPING.get(self.description, "❓")
+
 
 def make_wmo(description, icon_name) -> Wmo:
     icon = f"icons/{icon_name}@4x.png"
@@ -45,4 +48,35 @@ WMO_CODES = {
     95: make_wmo('Thunder Storm', 'thunderstorm'),
     96: make_wmo('T-Storm + L.Hail', 'thunderstorm-with-hail'),
     99: make_wmo('T-Storm + Hail', 'thunderstorm-with-hail')
+}
+
+EMOJI_MAPPING = {
+    "Clear": "☀️",
+    "Mostly Clear": "🌤️",
+    "Partly Cloudy": "⛅",
+    "Overcast": "☁️",
+    "Fog": "🌫️",
+    "Icy Fog": "🌫️",
+    "L.Drizzle": "🌧️",
+    "Drizzle": "🌧️",
+    "H.Drizzle": "🌧️",
+    "L.Showers": "🌧️",
+    "Showers": "🌧️",
+    "H.Showers": "🌧️",
+    "L.Rain": "🌧️",
+    "Rain": "🌧️",
+    "H.Rain": "🌧️",
+    "L.Icy Drizzle": "🌧️",
+    "Icy Drizzle": "🌧️",
+    "L.Icy Rain": "🌧️",
+    "Icy Rain": "🌧️",
+    "Snow Grains": "❄️",
+    "L.Snow Showers": "❄️",
+    "Snow Showers": "❄️",
+    "Light Snow": "❄️",
+    "Snow": "❄️",
+    "Heavy Snow": "❄️",
+    "Thunder Storm": "⛈️",
+    "T-Storm + L.Hail": "⛈️",
+    "T-Storm + Hail": "⛈️"
 }
