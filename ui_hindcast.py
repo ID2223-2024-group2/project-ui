@@ -7,7 +7,7 @@ TTL = 60 * 60
 FV_VERSION = 1
 
 
-@st.cache_data(show_spinner="Preparing hindcast data")
+@st.cache_data(ttl=TTL, show_spinner="Preparing hindcast data")
 def hindcast(_project, transport_string, datapoints):
     now = datetime.datetime.now()
     yesterday_midnight = datetime.datetime(now.year, now.month, now.day) - datetime.timedelta(days=1)
