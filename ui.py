@@ -74,7 +74,7 @@ with tab_predict:
     st.write("*All metrics are per-stop; Trends are calculated based on previous hour(s)*")
 
     st.write("#### Weather Forecast")
-    st.write("Sourced from [Open-Meteo](https://open-meteo.com)")
+    st.write("Predictions from [Open-Meteo](https://open-meteo.com); Icons via [OpenWeather](https://openweathermap.org)")
 
     st.markdown(
         f"""
@@ -89,14 +89,14 @@ with tab_predict:
             </div>
             <div style="display: flex; align-items: center;">
                 <div style="flex: 2; text-align: center;">
-                    <img src="{get_relative_static_url(weather_icons[0].icon)}" width="72">
+                    <img src="{weather_icons[0].open_weather_icon_url}" width="128">
                 </div>
                 <div style="flex: 4; font-size: 1.1em; text-align: center;">
                     {weather_icons[0].description}
                 </div>
                 <div style="flex: 0.1; height: 60px; border-left: 1px solid #ccc; margin: 0 10px;"></div>
                 <div style="flex: 2; text-align: center;">
-                    <img src="{get_relative_static_url(weather_icons[1].icon)}" width="72">
+                    <img src="{weather_icons[1].open_weather_icon_url}" width="128">
                 </div>
                 <div style="flex: 4; font-size: 1.1em; text-align: center;">
                     {weather_icons[1].description}
